@@ -1,0 +1,7 @@
+secrets.py
+__pycache__/
+.ipynb_checkpoints/
+audio/
+downloads/
+Untitled*
+webster.csv
