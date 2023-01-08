@@ -2,15 +2,46 @@ from abc import ABC, abstractmethod
 import requests
 import json
 from dict_secrets import PONS_SECRET
-from typing import List
+from typing import List, Optional
 from bs4 import BeautifulSoup
 from collections import defaultdict
 import pandas as pd
+import shutil
+
+from pathlib import Path
+from google_images_download import google_images_download
+response = google_images_download.googleimagesdownload() 
+
+
+def downloadimages(query):
+    # keywords is the search query
+    # format is the image file format
+    # limit is the number of images to be downloaded
+    # print urs is to print the image file url
+    # size is the image size which can
+    # be specified manually ("large, medium, icon")
+    # aspect ratio denotes the height width ratio
+    # of images to download. ("tall, square, wide, panoramic")
+    query = query.split(",")[0]
+    arguments = {"keywords": query,
+                 "format": "jpg",
+                 "limit": 1,
+                 "print_urls": False,
+                 "size": "medium",}
+    
+    response.download(arguments)
+    image = Path.cwd() / "downloads" / query
+    return Path(list(image.glob("*"))[0])
 
 
 class DictFactory(ABC):
     def __init__(self):
-        self.word = ""
+        self.original_word = ""
+        self.original_pos = ""
+        self.input_lang = ""
+        self.src_lang = ""
+        self.dst_lang = ""
+        self.collections_path = Path()
 
     @abstractmethod
     def get_entries():
@@ -22,9 +53,16 @@ class DictFactory(ABC):
         pass
 
     @property
-    @abstractmethod
     def image(self):
-        pass
+        if self.input_lang == self.dst_lang:
+            img_word = self.word
+        else:
+            img_word = self.definition
+        image_path = downloadimages(img_word)
+        img_name = image_path.parent.stem + image_path.suffix
+        img_dst = self.collections_path / img_name
+        shutil.copy(image_path, img_dst)
+        return f"<img src='{img_name}'>"
 
     @property
     @abstractmethod
@@ -58,8 +96,24 @@ class DictFactory(ABC):
 
     @property
     @abstractmethod
-    def original_word(self):
+    def word(self):
         pass
+
+    def anki_row(self):
+        row_dict = {
+            "German": self.processed_word,  # TODO 
+            "Picture": self.get_image,
+            "English": self.definition,
+            "Audio": self.audio,
+            "Sample sentence": self.example_src,
+            "Plural and inflected forms": self.tenses_plural,
+            "German Alternatives": "",
+            "English Alternatives": self.example_translation,
+            "Part of speech": self.pos,
+            "original_word": self.word,
+            "Source": "Language Reactor"
+        }
+        return row_dict
 
 
 class PonsEntries():
@@ -202,23 +256,33 @@ class PonsEntries():
 
 
 class PonsDict(DictFactory):
-    def __init__(self, word):
-        self.word = word
-        self.api = "https://api.pons.com/v1/dictionary?l=deen&q={word}"
+    def __init__(self,
+                 word: str,
+                 pos: Optional[str] = None,
+                 input_lang: Optional[str] = None,
+                 src_lang: str = "en",
+                 target_lang: str = "de"):
+        self.original_word = word
+        self.original_pos = pos
+        self.input_lang = input_lang
+        self.src_lang = src_lang
+        self.dst_lang = dst_lang
+
+        self.api = f"https://api.pons.com/v1/dictionary?l={target_lang}{src_lang}&q={word}"
+        self.processed_entries = PonsEntries(self.entries)
 
     def get_entries(self):
-        if r := requests.get(self.api.format(word=self.word),
-                         headers={"X-Secret": PONS_SECRET}).text:
+        if r := requests.get(self.api, headers={"X-Secret": PONS_SECRET}).text:
             return json.loads(r)
         else:
             return r
 
+    def select_row(self):
+        pass
+
     @property
     def entries(self):
         return self.get_entries()
-
-    def image(self):
-        pass
 
     def definition(self):
         pass
@@ -242,12 +306,127 @@ class PonsDict(DictFactory):
         pass
 
     @property
-    def original_word(self):
+    def word(self):
         pass
 
 
+class PonsDeEn(PonsDict):
+    def __init__(self,
+                 word: str,
+                 input_lang: Optional[str] = None,
+                 pos: Optional[str] = None):
+        super().__init__(word, pos, input_lang, "en", "de")
+        self.select_definition()
+
+    def definition(self):
+        definition = word_processing(self.row.target)
+        lang = self.src_lang if self.src_lang != self.input_lang else \
+            self.dst_lang
+        if "verb" in self.pos:
+            word = verb_processing(verb=word,
+                                   lang=lang,
+                                   pos=self.pos,
+                                   )
+        if self.pos == "noun":
+            word = noun_processing(noun=word,
+                                   lang=lang,
+                                   gender=self.row.gender_src,
+                                   )
+
+    def example_src(self):
+        return self.row.examples_src
+
+    def audio(self):
+        pass
+
+    @property
+    def example_dst(self):
+        return self.row.examples_dst
+
+    @property
+    def tenses_plural(self):
+        return self.row.flexion
+
+    @property
+    def pos(self):
+        if self.pos is None:
+            self.pos = self.row.pos
+
+    @property
+    def input_lang(self):
+        if self.input_lang is None:
+            self.input_lang = self.row.lang
+
+    @property
+    def word(self):
+        word = word_processing(self.original_word, sense=self.row.sense)
+        if "verb" in self.pos:
+            word = verb_processing(verb=word,
+                                   lang=self.input_lang,
+                                   pos=self.pos,
+                                   )
+        if self.pos == "noun":
+            word = noun_processing(noun=word,
+                                   lang=self.input_lang,
+                                   gender=self.row.gender_src,
+                                   )
+        return word
+
+DER_DIE_DAS = {"masculine": "der",
+               "neuter": "das",
+               "feminine": "die",
+               "m": "der",
+               "nt": "das",
+               "f": "die",
+               "plural": "die"}
+
+
+def word_processing(word: str, sense: str):
+    return word.replace("·", "") + sense
+
+
+def de_verb_processing(verb: str, **kwargs):
+    pos = kwargs.get("pos")
+    if pos == "reflexive verb":
+        verb = f"sich {verb}"
+    return verb
+
+
+def en_verb_processing(verb: str, **kwargs):
+    return f"to {verb}"
+
+
+verb_processors = {
+    "de": de_verb_processing,
+    "en": en_verb_processing,
+}
+
+
+def verb_processing(verb: str, lang: str, pos: str):
+    return verb_processors[lang](verb, pos=pos)
+
+
+def de_noun_processing(noun: str, **kwargs):
+    gender = kwargs.get("gender", "")
+    return f"{DER_DIE_DAS[gender]} {noun.capitalize()}"
+
+
+def en_noun_processing(noun: str, **kwargs):
+    return noun
+
+
+noun_processors = {
+    "de": de_noun_processing,
+    "en": en_noun_processing,
+}
+
+
+def noun_processing(noun: str, lang: str, gender: str):
+    return verb_processors[lang](noun, gender=gender)
+
+
 if __name__ == "__main__":
-    pons = PonsDict("nachlassig")
+    pons = PonsDict("laufen")
     # print(pons.entries)
     entries = pons.entries
     pons = PonsEntries(entries)
