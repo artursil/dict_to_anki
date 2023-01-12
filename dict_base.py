@@ -20,10 +20,6 @@ class DictBase(ABC):
         self.source = source
         self.collections_path = collections_path.expanduser()
 
-    @abstractmethod
-    def get_entries():
-        pass
-
     @property
     def image(self):
         if self.input_lang == self.dst_lang:

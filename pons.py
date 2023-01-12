@@ -8,16 +8,27 @@ import pandas as pd
 import shutil
 
 from pathlib import Path
-from utils import pos_processors, word_processing, noun_processing, verb_processing
+from utils import pos_processing, word_processing, noun_processing, verb_processing
 from dict_base import DictBase
 
 
 class PonsEntries():
-    def __init__(self, entries: List[dict]):
-        self.entries = entries
+    def __init__(self,
+                 word: str,
+                 src_lang: str = "en",
+                 dst_lang: str = "de",
+                 ):
+        self.url = f"https://api.pons.com/v1/dictionary?l={dst_lang}{src_lang}&q={word}"
+        self.entries = self.get_entries()
         self.langs = [x['lang'] for x in self.entries]
         self._init_processed()
         self.process_entries()
+
+    def get_entries(self):
+        if r := requests.get(self.url, headers={"X-Secret": PONS_SECRET}).text:
+            return json.loads(r)
+        else:
+            return r
 
     def _init_processed(self):
         self.processed_entries = {}
@@ -35,14 +46,14 @@ class PonsEntries():
                     arabs = rom["arabs"]
                     arabs_n = len(arabs)
                     entries_n += arabs_n
-                    self.processed_entries[lang]["rom_n"].extend([ix] * arabs_n)
+                    self.processed_entries[lang]["hit"].extend([ix] * arabs_n)
                     self.process_headwords(lang=lang, rom=rom, n=arabs_n)
                     self.process_headword_full(lang=lang, rom=rom, n=arabs_n)
                     wc = self.process_wordclass(lang=lang, rom=rom, n=arabs_n)
                     for arab in arabs:
                         self.process_arab(lang=lang, arab=arab, wc=wc)
 
-                self.processed_entries[lang]["hit_n"].extend([iy] * entries_n)
+                self.processed_entries[lang]["entry"].extend([iy] * entries_n)
 
     def process_headwords(self, lang: str, rom: dict, n: int):
         self.processed_entries[lang]["headword"].extend([rom["headword"]] * n)
@@ -103,7 +114,7 @@ class PonsEntries():
         else:
             target_desc = ""
         self.processed_entries[lang]["target"].append(target)
-        self.processed_entries[lang]["gender_dst_dst"].append(gender)
+        self.processed_entries[lang]["gender_dst"].append(gender)
         self.processed_entries[lang]["target_desc"].append(target_desc)
 
         # Examples
@@ -148,6 +159,9 @@ class PonsEntries():
             df = pd.concat([df, df_tmp])
         return df
 
+    def __call__(self):
+        return self.get_df()
+
 
 class PonsDict(DictBase):
     def __init__(self,
@@ -163,8 +177,8 @@ class PonsDict(DictBase):
         super().__init__(word, pos, input_lang, src_lang, dst_lang, source)
         self.manual_selection = manual_selection
 
-        self.api = f"https://api.pons.com/v1/dictionary?l={dst_lang}{src_lang}&q={word}"
-        self.entries = self.process_entries()
+        # self.entries = self.process_entries()
+        self.entries = PonsEntries(word, src_lang, dst_lang)()
         self.input_lang = self.get_input_lang(self.input_lang)
         # self.processed_entries = PonsEntries(self.entries)
 
@@ -178,16 +192,10 @@ class PonsDict(DictBase):
                 return row.iloc[0]
         return df.iloc[0]
 
-    def get_entries(self):
-        if r := requests.get(self.api, headers={"X-Secret": PONS_SECRET}).text:
-            return json.loads(r)
-        else:
-            return r
-
-    def process_entries(self):
-        pons = PonsEntries(self.get_entries())
-        df = pons.get_df()
-        return df
+    # def process_entries(self):
+    #     pons = PonsEntries(self.get_entries())
+    #     df = pons.get_df()
+    #     return df
 
     @property
     def audio(self):
@@ -249,7 +257,7 @@ class PonsDict(DictBase):
 
 
 if __name__ == "__main__":
-    pons = PonsDict("laufen")
+    pons = PonsDict("Spiel")
     # print(pons.entries)
     entries = pons.entries
     # entries = PonsEntries(entries)
