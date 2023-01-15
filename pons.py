@@ -1,15 +1,9 @@
 import requests
 import json
 from dict_secrets import PONS_SECRET
-from typing import List, Optional
 from bs4 import BeautifulSoup
 from collections import defaultdict
 import pandas as pd
-import shutil
-
-from pathlib import Path
-from utils import pos_processing, word_processing, noun_processing, verb_processing
-from dict_base import DictBase
 
 
 class PonsEntries():
@@ -161,109 +155,4 @@ class PonsEntries():
 
     def __call__(self):
         return self.get_df()
-
-
-class PonsDict(DictBase):
-    def __init__(self,
-                 word: str,
-                 pos: Optional[str] = None,
-                 input_lang: Optional[str] = None,
-                 manual_selection: bool = False,
-                 src_lang: str = "en",
-                 dst_lang: str = "de",
-                 source: str = "manual",
-                 # collections_path: Path,
-                 ):
-        super().__init__(word, pos, input_lang, src_lang, dst_lang, source)
-        self.manual_selection = manual_selection
-
-        # self.entries = self.process_entries()
-        self.entries = PonsEntries(word, src_lang, dst_lang)()
-        self.input_lang = self.get_input_lang(self.input_lang)
-        # self.processed_entries = PonsEntries(self.entries)
-
-    @property
-    def row(self) -> pd.Series:
-        df = self.entries
-        if self.original_pos is not None:
-            pos = pos_processing(pos=self.original_pos, lang=self.dst_lang,
-                                 word=self.original_word)
-            if row := df.loc[df.pos.isin(pos)]:
-                return row.iloc[0]
-        return df.iloc[0]
-
-    # def process_entries(self):
-    #     pons = PonsEntries(self.get_entries())
-    #     df = pons.get_df()
-    #     return df
-
-    @property
-    def audio(self):
-        ""
-
-    @property
-    def definition(self):
-        definition = word_processing(self.row.target, "")
-        lang = self.src_lang if self.src_lang != self.input_lang else \
-            self.dst_lang
-        if "verb" in self.pos:
-            definition = verb_processing(verb=definition,
-                                         lang=lang,
-                                         pos=self.pos,
-                                         )
-        if self.pos == "noun":
-            definition = noun_processing(noun=definition,
-                                         lang=lang,
-                                         gender=self.row.gender_src,
-                                         )
-        return definition
-
-    @property
-    def example_src(self):
-        return self.row.examples_src
-
-    @property
-    def example_dst(self):
-        return self.row.examples_dst
-
-    @property
-    def tenses_plural(self):
-        return self.row.flexion
-
-    @property
-    def pos(self):
-        if self.original_pos is None:
-            return self.row.pos
-
-    def get_input_lang(self, input_lang):
-        if input_lang is None:
-            return self.row.lang
-        return input_lang
-
-    @property
-    def word(self):
-        word = word_processing(self.original_word, sense=self.row.sense)
-        if "verb" in self.pos:
-            word = verb_processing(verb=word,
-                                   lang=self.input_lang,
-                                   pos=self.pos,
-                                   )
-        if self.pos == "noun":
-            word = noun_processing(noun=word,
-                                   lang=self.input_lang,
-                                   gender=self.row.gender_src,
-                                   )
-        return word
-
-
-if __name__ == "__main__":
-    pons = PonsDict("Spiel")
-    # print(pons.entries)
-    entries = pons.entries
-    # entries = PonsEntries(entries)
-    anki_row = pons.anki_row()
-    # df = pons.get_df()
-    # df.to_csv("test_pons.csv")
-    print(anki_row)
-    __import__('pdb').set_trace()
 

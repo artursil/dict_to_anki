@@ -1,3 +1,5 @@
+import requests
+import shutil
 from pathlib import Path
 from simple_image_download import simple_image_download as simp
 response = simp.simple_image_download
@@ -69,8 +71,8 @@ def en_noun_processing(noun: str, **kwargs):
 
 
 noun_processors = {
-    "de": de_noun_processing,
     "en": en_noun_processing,
+    "de": de_noun_processing,
 }
 
 
@@ -103,3 +105,33 @@ def pos_processing(pos: str, lang: str, word: str):
     pos_map = {"adj": "adjective", "adv": "adverb"}
     pos = pos_map[pos] if pos in pos_map.keys() else pos
     return pos_processors[lang](pos, word=word)
+
+
+def en_flexicon_processing(flexicon: str, **kwargs):
+    return flexicon
+
+
+def de_flexicon_processing(flexicon: str, **kwargs):
+    word = kwargs["word"]
+    word = word.capitalize() + flexicon.split("-")[-1].split(">")[0]
+    return f"die {word}"
+
+
+flexicon_processor = {
+    "en": en_flexicon_processing,
+    "de": de_flexicon_processing,
+}
+
+
+def flexicon_processing(flexicon: str, lang: str, word: str):
+    return flexicon_processor[lang](flexicon, word=word)
+
+
+def get_audio(audio_url, word, collections_path):
+    r = requests.get(audio_url)
+    audio_name = f"{word}.mp3"
+    audio_save = f"audio/{word}.mp3"
+    open(audio_save, "wb").write(r.content)
+    shutil.copy(audio_save, collections_path / audio_name)
+    return f"[sound:{audio_name}]"
+

@@ -29,6 +29,7 @@ class LingueeEntries():
                  ):
         self.word = word
         self.url = f"https://linguee-api.fly.dev/api/v2/translations?query={word}&src={src_lang}&dst={dst_lang}&guess_direction=true&follow_corrections=always"
+        print(self.url)
         self.lang_pool = [src_lang, dst_lang]
         self.entries, self.error = self._get_lin_entries()
         self.langs = [self._get_lang(x) for x in self.entries]
