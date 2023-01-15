@@ -119,6 +119,15 @@ class LingueeEntries():
                 df_tmp = pd.DataFrame(v)
                 df_tmp["lang"] = k
                 df = pd.concat([df, df_tmp])
+            df["gender_src"] = ""
+            df["gender_dst"] = ""
+            for ix, row in df.iterrows():
+                if "," in row.pos:
+                    pg = [x.strip() for x in row.pos.split(",")]
+                    df.loc[ix, "pos"], df.loc[ix, "gender_src"] = pg
+                if "," in row.pos_dst:
+                    pg = [x.strip() for x in row.pos_dst.split(",")]
+                    df.loc[ix, "pos_dst"], df.loc[ix, "gender_dst"] = pg
             return df
         else:
             return pd.DataFrame()

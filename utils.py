@@ -77,7 +77,7 @@ noun_processors = {
 
 
 def noun_processing(noun: str, lang: str, gender: str):
-    return verb_processors[lang](noun, gender=gender)
+    return noun_processors[lang](noun, gender=gender)
 
 
 def de_pos_processing(pos: str, **kwargs):

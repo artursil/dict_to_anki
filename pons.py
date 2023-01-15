@@ -64,7 +64,12 @@ class PonsEntries():
         else:
             phonetics = ""
         if span := hf.find("span", {"class": "genus"}):
-            gender = span.get("title")
+            if acronym := span.find("acronym"):
+                gender = acronym.get("title")
+            else:
+                gender = span.get("title")
+            if not gender:
+                gender = span.text
         else:
             gender = ""
         # if span := hf.find("span", {"class": "wordclass"}):

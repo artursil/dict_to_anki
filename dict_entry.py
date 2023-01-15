@@ -17,7 +17,7 @@ entries_factory = {
 
 
 class DictEntry():
-    def __init__(self, 
+    def __init__(self,
                  word: str,
                  pos: Optional[str] = None,
                  input_lang: Optional[str] = None,
@@ -58,17 +58,24 @@ class DictEntry():
         if self.original_pos is not None:
             pos = pos_processing(pos=self.original_pos, lang=self.dst_lang,
                                  word=self.original_word)
-            if row := df.loc[df.pos.isin(pos)]:
-                return row.iloc[0]
+            df = df.loc[df.pos == pos]
+        df["target_len"] = [len(x.split(" ")) for x in df.target]
+        # Sometimes first entry for Pons is the whole sentence as a translation
+        # instead of simple definition, that's why I'm picking definitions
+        # shorter than 4 word.
+        # Example: https://de.pons.com/%C3%BCbersetzung/deutsch-englisch/Spiel
+        if not df.iloc[:3].loc[df.iloc[:3].target_len <= 3].empty:
+            df = df.loc[df.target_len <= 3]
+        df.drop(columns=["target_len"], inplace=True)
         return df.iloc[0]
 
     @property
     def audio(self):
         if self.input_lang == self.src_lang:
-            audio = self.row.get("example_dst")
+            audio = self.row.get("audio_dst")
             word = self.definition
         else:
-            audio = self.row.get("example_src")
+            audio = self.row.get("audio_src")
             word = self.word
         if audio:
             return get_audio(audio_url=audio,
@@ -102,11 +109,23 @@ class DictEntry():
         return self.row.examples_dst
 
     @property
+    def gender_src(self):
+        return self.row.gender_src
+
+    @property
+    def gender_dst(self):
+        return self.row.gender_dst
+
+    @property
+    def pos_dst(self):
+        return self.row.get("pos_dst", "")
+
+    @property
     def tenses_plural(self):
         if forms := self.row.get("forms"):
             return forms
-        if flexicon := self.row.get("flexicon"):
-            return flexicon
+        if flexion := self.row.get("flexion"):
+            return flexion
 
 # @property
 # def tenses_plural(self):
@@ -133,6 +152,7 @@ class DictEntry():
     def pos(self):
         if self.original_pos is None:
             return self.row.pos
+        return self.original_pos
 
     def get_input_lang(self, input_lang):
         if input_lang is None:
@@ -166,9 +186,12 @@ class DictEntry():
             "definition": self.definition,
             "audio": self.audio,
             "example_src": self.example_src,
+            "gender_src": self.gender_src,
+            "gender_dst": self.gender_dst,
             "tenses_plural": self.tenses_plural,
             "example_dst": self.example_dst,
             "pos": self.pos,
+            "pos_dst": self.pos_dst,
             "original_word": self.word,
             "source": self.source
         }
@@ -177,26 +200,6 @@ class DictEntry():
     def __call__(self):
         return self.get_dict()
 
-    def anki_row(self):
-        if self.input_lang == self.src_lang:
-            processed_word = self.definition
-        else:
-            processed_word = self.word
-
-        row_dict = {
-            "German": processed_word,
-            "Picture": self.image,
-            "English": self.definition,
-            "Audio": self.audio,
-            "Sample sentence": self.example_src,
-            "Plural and inflected forms": self.tenses_plural,
-            "German Alternatives": "",
-            "English Alternatives": self.example_dst,
-            "Part of speech": self.pos,
-            "original_word": self.word,
-            "Source": self.source
-        }
-        return row_dict
 
 if __name__ == "__main__":
     entry = DictEntry("Spiel")()
