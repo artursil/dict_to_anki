@@ -1,3 +1,5 @@
+import re
+from typing import List
 import requests
 import shutil
 from pathlib import Path
@@ -134,4 +136,27 @@ def get_audio(audio_url, word, collections_path):
     open(audio_save, "wb").write(r.content)
     shutil.copy(audio_save, collections_path / audio_name)
     return f"[sound:{audio_name}]"
+
+
+del_italics = lambda x: x.replace("{it}", "").replace("{/it}", "")
+
+def get_sub(audio: str):
+    if "gg" in audio[:2]:
+        return "gg"
+    if "bix" in audio[:3]:
+        return "bix"
+    m = re.search(r"[0-9]", audio[0])
+    if m:
+        return "number"
+    return audio[0]
+
+def get_webster_audio(webster_entries: List[dict], audio_base_url: str):
+    try:
+        audio = webster_entries[0]["hwi"]["prs"][0]["sound"]["audio"]
+    except KeyError:
+        return ""
+    else:
+        audio_save = f"audio/{audio}.mp3"
+        audio_url = audio_base_url.format(subdirectory=get_sub(audio), base_filename=audio)
+        return audio_url
 

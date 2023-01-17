@@ -8,11 +8,13 @@ from utils import (get_audio, pos_processing, word_processing, noun_processing,
 from dict_base import DictBase
 from linguee import LingueeEntries
 from pons import PonsEntries
+from webster import WebsterEntries
 
 
 entries_factory = {
     "pons": PonsEntries,
     "linguee": LingueeEntries,
+    "webster": WebsterEntries,
 }
 
 
@@ -41,7 +43,9 @@ class DictEntry():
 
     @property
     def image(self):
-        if self.input_lang == self.dst_lang:
+        if self.input_lang == self.dst_lang == self.src_lang:
+            img_word = self.word
+        elif self.input_lang == self.dst_lang:
             img_word = self.definition
         else:
             img_word = self.word
@@ -77,7 +81,10 @@ class DictEntry():
 
     @property
     def audio(self):
-        if self.input_lang == self.src_lang:
+        if self.input_lang == self.dst_lang == self.src_lang:
+            audio = self.row.get("audio_src")
+            word = self.word
+        elif self.input_lang == self.src_lang:
             audio = self.row.get("audio_dst")
             word = self.definition
         else:
@@ -108,19 +115,19 @@ class DictEntry():
 
     @property
     def example_src(self):
-        return self.row.examples_src
+        return self.row.get("examples_src")
 
     @property
     def example_dst(self):
-        return self.row.examples_dst
+        return self.row.get("examples_dst")
 
     @property
     def gender_src(self):
-        return self.row.gender_src
+        return self.row.get("gender_src")
 
     @property
     def gender_dst(self):
-        return self.row.gender_dst
+        return self.row.get("gender_dst")
 
     @property
     def pos_dst(self):
@@ -132,6 +139,7 @@ class DictEntry():
             return forms
         if flexion := self.row.get("flexion"):
             return flexion
+        return ""
 
 # @property
 # def tenses_plural(self):
@@ -212,4 +220,7 @@ if __name__ == "__main__":
     print(entry)
 
     entry = DictEntry("Spiel", used_dict="linguee")()
+    print(entry)
+
+    entry = DictEntry("imperative", used_dict="webster", dst_lang="en")()
     print(entry)
