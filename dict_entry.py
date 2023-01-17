@@ -58,7 +58,9 @@ class DictEntry():
         if self.original_pos is not None:
             pos = pos_processing(pos=self.original_pos, lang=self.dst_lang,
                                  word=self.original_word)
-            df = df.loc[df.pos == pos]
+            mask = [x in pos or pos in x for x in df.pos]
+            if any(mask):
+                df = df.loc[mask]
         df["target_len"] = [len(x.split(" ")) for x in df.target]
         # Sometimes first entry for Pons is the whole sentence as a translation
         # instead of simple definition, that's why I'm picking definitions
@@ -67,6 +69,10 @@ class DictEntry():
         if not df.iloc[:3].loc[df.iloc[:3].target_len <= 3].empty:
             df = df.loc[df.target_len <= 3]
         df.drop(columns=["target_len"], inplace=True)
+        # try:
+        #     df.iloc[0]
+        # except:
+        #     import pdb; pdb.set_trace()
         return df.iloc[0]
 
     @property

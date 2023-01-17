@@ -8,6 +8,11 @@ from dict_entry import DictEntry
 class DictCombine(BaseModel):
     dicts: List[DictEntry]
     dict_names: List[str]
+    entries: dict = {}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.entries = self.get_entries()
 
     @classmethod
     def init(
@@ -37,8 +42,7 @@ class DictCombine(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @property
-    def entries(self):
+    def get_entries(self):
         entries = {}
         for d, n in zip(self.dicts, self.dict_names):
             entries[n] = d()
@@ -52,7 +56,8 @@ class DictCombine(BaseModel):
         df["value"] = vv
         if sort:
             custom_sort = {x: i for i, x in enumerate(sort)}
-            df.sort_values(by=["dictionary"], key=lambda x: x.map(custom_sort))
+            df = df.sort_values(by=["dictionary"], key=lambda x: x.map(custom_sort))
+            import pdb; pdb.set_trace()
         non_empty_df = df.loc[(~pd.isnull(df.value)) & (df.value != "")]
         if not non_empty_df.empty:
             return non_empty_df
@@ -64,7 +69,7 @@ class DictCombine(BaseModel):
 
     def __return_multiple_value(self, key: str, sort: list = []):
         df = self.__prepare_df(key, sort)
-        examples = "<br>".join(df.value.to_list())
+        examples = "<br>".join(df.value.to_list()).split("<br>")
         if len(examples) >= 2:
             return f"1. {examples[0]}<br> 2. {examples[1]}"
         return examples[0]
@@ -73,6 +78,7 @@ class DictCombine(BaseModel):
     def picture(self):
         return self.__return_single_value("picture")
 
+    @property
     def processed_word(self):
         return self.__return_single_value("processed_word")
 
@@ -86,11 +92,15 @@ class DictCombine(BaseModel):
 
     @property
     def example_src(self):
-        return self.__return_multiple_value("example_src")
+        return self.__return_multiple_value(
+            "example_src", sort=["linguee", "pons"]
+        )
 
     @property
     def example_dst(self):
-        return self.__return_multiple_value("example_dst")
+        return self.__return_multiple_value(
+            "example_dst", sort=["linguee", "pons"]
+        )
 
     @property
     def gender_src(self):
