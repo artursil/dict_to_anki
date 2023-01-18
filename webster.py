@@ -53,9 +53,10 @@ class WebsterEntries():
                 desc = dt[0][-1]
                 try:
                     example = f"<i>// {dt[1][-1][0]['t'].replace(self.original_word, '_____')}</i>"
-                    example = f"Example: {del_italics(example)}"
-                except (IndexError, KeyError):
+                except (IndexError, KeyError, TypeError):
                     example = ""
+                else:
+                    example = f"Example: {del_italics(example)}"
                 if synonyms:
                     syn_list = synonyms[:5]
                 else:
