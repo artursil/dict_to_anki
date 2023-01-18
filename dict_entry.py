@@ -24,6 +24,7 @@ class DictEntry():
                  pos: Optional[str] = None,
                  input_lang: Optional[str] = None,
                  manual_selection: bool = False,
+                 two_entries: bool = False,
                  src_lang: str = "en",
                  dst_lang: str = "de",
                  source: str = "manual",
@@ -35,6 +36,7 @@ class DictEntry():
         self.src_lang = src_lang
         self.dst_lang = dst_lang
         self.source = source
+        self.two_entries = two_entries
         self.collections_path = collections_path.expanduser()
         self.manual_selection = manual_selection
 
@@ -109,7 +111,7 @@ class DictEntry():
         if self.pos == "noun":
             definition = noun_processing(noun=definition,
                                          lang=lang,
-                                         gender=self.row.gender_src,
+                                         gender=self.row.get("gender_src"),
                                          )
         return definition
 
@@ -184,12 +186,14 @@ class DictEntry():
         if self.pos == "noun":
             word = noun_processing(noun=word,
                                    lang=self.input_lang,
-                                   gender=self.row.gender_src,
+                                   gender=self.row.get("gender_src"),
                                    )
         return word
 
     def get_dict(self):
-        if self.input_lang == self.src_lang:
+        if self.input_lang == self.dst_lang == self.src_lang:
+            processed_word = self.word
+        elif self.input_lang == self.src_lang:
             processed_word = self.definition
         else:
             processed_word = self.word
@@ -214,13 +218,33 @@ class DictEntry():
     def __call__(self):
         return self.get_dict()
 
+    @classmethod
+    def webster(
+        cls,
+        word: str,
+        pos: Optional[str] = None,
+        manual_selection: bool = False,
+        source: str = "manual",
+    ):
+        return cls(
+            word=word,
+            pos=pos,
+            input_lang="en",
+            manual_selection=manual_selection,
+            two_entries=True,
+            src_lang="en",
+            dst_lang="en",
+            source=source,
+            used_dict="webster"
+         )
+
 
 if __name__ == "__main__":
-    entry = DictEntry("Spiel")()
-    print(entry)
+    # entry = DictEntry("Spiel")()
+    # print(entry)
+    #
+    # entry = DictEntry("Spiel", used_dict="linguee")()
+    # print(entry)
 
-    entry = DictEntry("Spiel", used_dict="linguee")()
-    print(entry)
-
-    entry = DictEntry("imperative", used_dict="webster", dst_lang="en")()
+    entry = DictEntry.webster("pull the wool over one's eyes")()
     print(entry)
