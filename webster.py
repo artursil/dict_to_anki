@@ -58,7 +58,7 @@ class WebsterEntries():
                     syn_list = "<b>Synonyms: </b><br>" +", ".join([x["wd"] for x in syns][:5])
                 desc = f"{desc}<br>{example}<br>{syn_list}"
                 definition = {
-                    "title": f"{self.original_word} ({fl})",
+                    "processed_word": f"{self.original_word} ({fl})",
                     "pos": fl,
                     "target": desc,
                     "synonyms": syn_list,

@@ -175,6 +175,8 @@ class DictEntry():
 
     @property
     def word(self):
+        if processed_word := self.row.get("processed_word"):
+            return processed_word
         word = word_processing(self.original_word, sense=self.row.get("sense", ""))
         if "verb" in self.pos:
             word = verb_processing(verb=word,
@@ -288,6 +290,6 @@ if __name__ == "__main__":
     # entry = DictEntry("Spiel", used_dict="linguee")()
     # print(entry)
 
-    entry = DictEntry.webster("pull the wool over one's eyes")()
-    entry = TwoEntries.webster("pull the wool over one's eyes")()
+    # entry = DictEntry.webster("pull the wool over one's eyes")()
+    entry = TwoEntries.webster("imperative")()
     print(entry)
