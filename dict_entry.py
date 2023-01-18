@@ -24,7 +24,6 @@ class DictEntry():
                  pos: Optional[str] = None,
                  input_lang: Optional[str] = None,
                  manual_selection: bool = False,
-                 two_entries: bool = False,
                  src_lang: str = "en",
                  dst_lang: str = "de",
                  source: str = "manual",
@@ -36,7 +35,6 @@ class DictEntry():
         self.src_lang = src_lang
         self.dst_lang = dst_lang
         self.source = source
-        self.two_entries = two_entries
         self.collections_path = collections_path.expanduser()
         self.manual_selection = manual_selection
 
@@ -231,13 +229,57 @@ class DictEntry():
             pos=pos,
             input_lang="en",
             manual_selection=manual_selection,
-            two_entries=True,
             src_lang="en",
             dst_lang="en",
             source=source,
             used_dict="webster"
          )
 
+
+class TwoEntries(DictEntry):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pos_set = self.original_pos is not None
+
+    @property
+    def all_pos(self):
+        all_pos = self.entries.pos.drop_duplicates()
+        if all_pos[0] == "phrase":
+            all_pos = all_pos[[0]]
+        return all_pos
+    
+    def get_dicts(self):
+        dicts = []
+        if self.pos_set:
+            return [self.get_dict()]
+        for pos in self.all_pos[:2]:
+            self.original_pos = pos
+            result = self.get_dict()
+            dicts.append(result)
+        return dicts
+
+    def __call__(self):
+        return self.get_dicts()
+
+        
+    @classmethod
+    def webster(
+        cls,
+        word: str,
+        pos: Optional[str] = None,
+        manual_selection: bool = False,
+        source: str = "manual",
+    ):
+        return cls(
+            word=word,
+            pos=pos,
+            input_lang="en",
+            manual_selection=manual_selection,
+            src_lang="en",
+            dst_lang="en",
+            source=source,
+            used_dict="webster"
+         )
 
 if __name__ == "__main__":
     # entry = DictEntry("Spiel")()
@@ -247,4 +289,5 @@ if __name__ == "__main__":
     # print(entry)
 
     entry = DictEntry.webster("pull the wool over one's eyes")()
+    entry = TwoEntries.webster("pull the wool over one's eyes")()
     print(entry)
