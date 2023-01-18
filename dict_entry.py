@@ -49,6 +49,7 @@ class DictEntry():
             img_word = self.definition
         else:
             img_word = self.word
+        img_word = img_word.split("(")[-1]
         image_path = downloadimages(img_word)
         img_name = image_path.parent.stem + image_path.suffix
         img_dst = self.collections_path / img_name
@@ -251,6 +252,8 @@ class TwoEntries(DictEntry):
         return all_pos
     
     def get_dicts(self):
+        if self.entries.empty:
+            return [{}]
         dicts = []
         if self.pos_set:
             return [self.get_dict()]

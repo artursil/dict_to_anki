@@ -26,6 +26,10 @@ class WebsterEntries():
                                 definitions: list = []):
         definitions = []
         # audio = get_webster_audio(webster_entries)
+        if not thesaurus_entries and isinstance(webster_entries[0], str):
+            return definitions
+        elif not thesaurus_entries:
+            thesaurus_entries = [""]
         audio = ""
         if isinstance(thesaurus_entries[0], str):
             entries = webster_entries
@@ -33,7 +37,14 @@ class WebsterEntries():
         else:
             entries = thesaurus_entries
             synonyms = []
-        audio = get_webster_audio(webster_entries, self.audio_base)
+        audio = ""
+        if isinstance(webster_entries[0], dict):
+            audio = get_webster_audio(webster_entries, self.audio_base)
+        else:
+            audio = ""
+
+            if isinstance(thesaurus_entries[0], str):
+                return definitions
         for entry in entries:
             fl = entry["fl"]
 
@@ -43,7 +54,7 @@ class WebsterEntries():
                 try:
                     example = f"<i>// {dt[1][-1][0]['t'].replace(self.original_word, '_____')}</i>"
                     example = f"Example: {del_italics(example)}"
-                except IndexError:
+                except (IndexError, KeyError):
                     example = ""
                 if synonyms:
                     syn_list = synonyms[:5]
