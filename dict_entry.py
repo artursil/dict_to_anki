@@ -294,5 +294,5 @@ if __name__ == "__main__":
     # print(entry)
 
     # entry = DictEntry.webster("pull the wool over one's eyes")()
-    entry = TwoEntries.webster("imperative")()
+    entry = TwoEntries.webster("callous")()
     print(entry)

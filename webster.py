@@ -48,15 +48,19 @@ class WebsterEntries():
         for entry in entries:
             fl = entry["fl"]
 
-            for d in entry["def"][0]["sseq"][:2]:
-                dt = d[0][1]["dt"]
+            for d in entry["def"][0]["sseq"]:
+                dt = d[0][1]
+                if sense := dt.get("sense"):
+                    dt = sense["dt"]
+                else:
+                    dt = dt["dt"]
                 desc = dt[0][-1]
                 try:
-                    example = f"<i>// {dt[1][-1][0]['t'].replace(self.original_word, '_____')}</i>"
+                    example = f"<i> {dt[1][-1][0]['t'].replace(self.original_word, '_____')}</i>"
                 except (IndexError, KeyError, TypeError):
                     example = ""
                 else:
-                    example = f"Example: {del_italics(example)}"
+                    example = f"<b>Example</b><br>: {del_italics(example)}"
                 if synonyms:
                     syn_list = synonyms[:5]
                 else:
@@ -68,7 +72,7 @@ class WebsterEntries():
                         except KeyError:
                             syns = []
                     syn_list = "<b>Synonyms: </b><br>" +", ".join([x["wd"] for x in syns][:5])
-                desc = f"{desc}<br>{example}<br>{syn_list}"
+                desc = f"{desc}<br><br>{example}<br><br>{syn_list}"
                 definition = {
                     "processed_word": f"{self.original_word} ({fl})",
                     "pos": fl,
