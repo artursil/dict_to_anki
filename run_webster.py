@@ -83,7 +83,8 @@ def process_entry(entry: dict):
         "Definition": entry["definition"],
         "Audio": entry["audio"],
         "Part of speech": entry["pos"],
-        "Sample sentence": entry["example_src"]
+        "Sample sentence": entry["example_src"],
+        "Original word": entry["original_word"]
     }
     return new_entry
 
@@ -91,25 +92,35 @@ def process_entry(entry: dict):
 def run_definitions():
     df = pd.read_csv("webster_saved_words.csv")
     try:
-        webster_df = pd.read_csv("webster.csv")
+        webster_df = pd.read_csv(
+            "webster.csv",
+            index_col=False,
+            header=None,
+            names=["Word", "Picture", "Definition", "Audio",
+                   "Part of speech", "Sample sentence", "Original word"]
+        )
     except FileNotFoundError:
         webster_df = pd.DataFrame(
-            columns=["Word", "Picture", "Definition", "Audio", "Part of speech", "Sample sentence"]
+            columns=["Word", "Picture", "Definition", "Audio",
+                     "Part of speech", "Sample sentence", "Original word"]
         )
-    entries = []
+    entries = webster_df.to_dict("records")
     for ix, row in df.iterrows():
         print(ix)
         word = row.saved_words
-        if word in webster_df["Word"]:
+        if word in webster_df["Original word"].to_list():
             continue
         print(word)
         ee = TwoEntries.webster(word)()
         if ee[0]:
             ee = [process_entry(x) for x in ee]
             entries.extend(ee)
+        if ix % 10 == 1:
+            webster_df = pd.DataFrame(entries)
+            webster_df.to_csv("webster.csv", index=None, header=None)
     webster_df = pd.DataFrame(entries)
 
-    webster_df.to_csv("webster.csv", index=None)
+    webster_df.to_csv("webster.csv", index=None, header=None)
 
 def run(scrape=False):
     if scrape:
