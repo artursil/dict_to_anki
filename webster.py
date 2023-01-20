@@ -60,7 +60,7 @@ class WebsterEntries():
                 except (IndexError, KeyError, TypeError):
                     example = ""
                 else:
-                    example = f"<b>Example</b><br>: {del_italics(example)}"
+                    example = f"<b>Example:</b><br> {del_italics(example)}"
                 if synonyms:
                     syn_list = synonyms[:5]
                 else:
