@@ -49,7 +49,7 @@ class DictEntry():
             img_word = self.definition
         else:
             img_word = self.word
-        img_word = img_word.split("(")[-1]
+        img_word = img_word.split("(")[0].strip()
         image_path = downloadimages(img_word)
         img_name = image_path.parent.stem + image_path.suffix
         img_dst = self.collections_path / img_name
@@ -211,7 +211,7 @@ class DictEntry():
             "example_dst": self.example_dst,
             "pos": self.pos,
             "pos_dst": self.pos_dst,
-            "original_word": self.word,
+            "original_word": self.original_word,
             "source": self.source
         }
         return row_dict
