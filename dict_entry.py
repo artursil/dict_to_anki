@@ -171,6 +171,8 @@ class DictEntry():
 
     def get_input_lang(self, input_lang):
         if input_lang is None:
+            if self.entries.empty:
+                return ""
             return self.row.lang
         return input_lang
 
@@ -217,6 +219,8 @@ class DictEntry():
         return row_dict
 
     def __call__(self):
+        if self.entries.empty:
+            return {}
         return self.get_dict()
 
     @classmethod

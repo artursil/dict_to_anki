@@ -9,10 +9,19 @@ class DictCombine(BaseModel):
     dicts: List[DictEntry]
     dict_names: List[str]
     entries: dict = {}
+    external_example_dst: str = ""
+    external_example_src: str = ""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.entries = self.get_entries()
+        self.validate_external_examples()
+
+    def validate_external_examples(self):
+        if self.external_example_dst and not self.external_example_src:
+            self.external_example_dst = ""
+        if not self.external_example_dst and self.external_example_src:
+            self.external_example_src = ""
 
     @classmethod
     def init(
@@ -22,8 +31,11 @@ class DictCombine(BaseModel):
         pos: Optional[str] = None,
         input_lang: Optional[str] = None,
         manual_selection: bool = False,
+        source: str = "manual",
         src_lang: str = "en",
         dst_lang: str = "de",
+        external_example_src: str = "",
+        external_example_dst: str = "",
         collections_path: Path = Path("~/.local/share/Anki2/User 1/collection.media")
     ):
         dicts = []
@@ -35,9 +47,14 @@ class DictCombine(BaseModel):
                           src_lang=src_lang,
                           dst_lang=dst_lang,
                           used_dict=dtu,
+                          source=source,
                           collections_path=collections_path)
-            dicts.append(d)
-        return cls(dicts=dicts, dict_names=dicts_to_use)
+            if d:
+                dicts.append(d)
+        return cls(dicts=dicts,
+                   dict_names=dicts_to_use,
+                   external_example_src=external_example_src,
+                   external_example_dst=external_example_dst)
 
     class Config:
         arbitrary_types_allowed = True
@@ -57,17 +74,18 @@ class DictCombine(BaseModel):
         if sort:
             custom_sort = {x: i for i, x in enumerate(sort)}
             df = df.sort_values(by=["dictionary"], key=lambda x: x.map(custom_sort))
-            import pdb; pdb.set_trace()
         non_empty_df = df.loc[(~pd.isnull(df.value)) & (df.value != "")]
         if not non_empty_df.empty:
             return non_empty_df
         return df
 
-    def __return_single_value(self, key: str, sort: list = []):
+    def __return_single_value(self, key: str, sort: list = [],
+                              examples: list = []):
         df = self.__prepare_df(key, sort)
         return df.iloc[0].value
 
-    def __return_multiple_value(self, key: str, sort: list = []):
+    def __return_multiple_value(self, key: str, sort: list = [],
+                                examples: list = []):
         df = self.__prepare_df(key, sort)
         examples = "<br>".join(df.value.to_list()).split("<br>")
         if len(examples) >= 2:
@@ -93,13 +111,15 @@ class DictCombine(BaseModel):
     @property
     def example_src(self):
         return self.__return_multiple_value(
-            "example_src", sort=["linguee", "pons"]
+            "example_src", sort=["linguee", "pons"],
+            examples=[self.external_example_src]
         )
 
     @property
     def example_dst(self):
         return self.__return_multiple_value(
-            "example_dst", sort=["linguee", "pons"]
+            "example_dst", sort=["linguee", "pons"],
+            examples=[self.external_example_dst]
         )
 
     @property
@@ -146,3 +166,8 @@ class DictCombine(BaseModel):
             "Source": self.source
         }
         return row_dict
+
+    def __call__(self):
+        if not self.dicts[0]:
+            return {}
+        return self.anki_row
