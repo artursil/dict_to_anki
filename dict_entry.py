@@ -169,6 +169,7 @@ class DictEntry():
     def pos(self):
         if self.original_pos is None:
             return self.row.pos
+        # If orginal_pos is wrong we want to take pos from row
         if self.original_pos not in self.row.pos:
             return self.row.pos
         return self.original_pos
