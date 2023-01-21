@@ -85,7 +85,9 @@ class PonsEntries():
             self.processed_entries[lang]["pos"].extend([wordclass] * n)
             return wordclass
         else:
-            raise KeyError("wordclass")
+            self.processed_entries[lang]["pos"].extend([""] * n)
+            return ""
+            # raise KeyError("wordclass")
 
     def process_arab(self, lang: str, arab: dict, wc: str):
         # Sens
@@ -106,12 +108,12 @@ class PonsEntries():
             sp = target.split()
             target = " ".join(sp[:-1])
             gender = sp[-1]
+        target_desc = ""
         if span := trans.find("span"):
-            target_desc = span.acronym.get("title")
-        elif acronym := trans.acrronym:
+            if acronym := span.get("acronym"):
+                target_desc = acronym.get("title")
+        elif acronym := trans.acronym:
             target_desc = acronym.get("title")
-        else:
-            target_desc = ""
         self.processed_entries[lang]["target"].append(target)
         self.processed_entries[lang]["gender_dst"].append(gender)
         self.processed_entries[lang]["target_desc"].append(target_desc)
