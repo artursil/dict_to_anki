@@ -49,7 +49,7 @@ class DictCombine(BaseModel):
                           used_dict=dtu,
                           source=source,
                           collections_path=collections_path)
-            if d:
+            if d():
                 dicts.append(d)
         return cls(dicts=dicts,
                    dict_names=dicts_to_use,
@@ -168,6 +168,8 @@ class DictCombine(BaseModel):
         return row_dict
 
     def __call__(self):
+        if not self.dicts:
+            return {}
         if not self.dicts[0]:
             return {}
         return self.anki_row

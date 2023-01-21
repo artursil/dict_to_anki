@@ -60,6 +60,8 @@ class DictEntry():
     def row(self) -> pd.Series:
         df = self.entries
         df = df.loc[df.lang == self.dst_lang]
+        if df.empty:
+            return pd.Series()
         if self.original_pos is not None:
             pos = pos_processing(pos=self.original_pos, lang=self.dst_lang,
                                  word=self.original_word)
@@ -173,7 +175,7 @@ class DictEntry():
         if input_lang is None:
             if self.entries.empty:
                 return ""
-            return self.row.lang
+            return self.row.get("lang")
         return input_lang
 
     @property
@@ -194,6 +196,8 @@ class DictEntry():
         return word
 
     def get_dict(self):
+        if self.entries.empty or self.row.empty:
+            return {}
         if self.input_lang == self.dst_lang == self.src_lang:
             processed_word = self.word
         elif self.input_lang == self.src_lang:
@@ -219,8 +223,6 @@ class DictEntry():
         return row_dict
 
     def __call__(self):
-        if self.entries.empty:
-            return {}
         return self.get_dict()
 
     @classmethod

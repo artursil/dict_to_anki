@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 from dict_secrets import PONS_SECRET
@@ -7,10 +8,13 @@ from collections import defaultdict
 import pandas as pd
 import shutil
 from copy import copy
+from urllib3.exceptions import MaxRetryError, NewConnectionError
 
 from pathlib import Path
 from utils import pos_processors, word_processing, noun_processing, verb_processing
 from dict_base import DictBase
+
+import linguee_api
 
 
 def process_lang(lang: str):
@@ -28,13 +32,25 @@ class LingueeEntries():
                  dst_lang: str = "de",
                  ):
         self.word = word
-        self.url = f"https://linguee-api.fly.dev/api/v2/translations?query={word}&src={src_lang}&dst={dst_lang}&guess_direction=true&follow_corrections=always"
+        self.api_url = self.get_api_url()
+        self.url = f"{self.api_url}/api/v2/translations?query={word}&src={src_lang}&dst={dst_lang}&guess_direction=true&follow_corrections=always"
         print(self.url)
         self.lang_pool = [src_lang, dst_lang]
         self.entries, self.error = self._get_lin_entries()
         self.langs = [self._get_lang(x) for x in self.entries]
         self._init_processed()
         self.process_entries()
+
+    def get_api_url(self):
+        try:
+            r = requests.get("http://127.0.0.1:8000")
+            r = r.ok
+        # except (ConnectionError, MaxRetryError, ConnectionRefusedError, NewConnectionError):
+        except:
+            r = False
+        if not r:
+            os.system("uvicorn linguee_api.api:app &")
+        return "http://127.0.0.1:8000"
 
     def _get_lin_entries(self):
         r = requests.get(self.url).text
