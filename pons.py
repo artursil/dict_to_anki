@@ -217,6 +217,7 @@ class PonsEntries():
             df = pd.concat([df, df_tmp])
 
         df = self.__interpolate_gf(df)
+        df = df.loc[(~pd.isnull(df.target)) & (df.target != "")]
         return df
 
     def __call__(self):
