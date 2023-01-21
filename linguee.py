@@ -37,9 +37,10 @@ class LingueeEntries():
         print(self.url)
         self.lang_pool = [src_lang, dst_lang]
         self.entries, self.error = self._get_lin_entries()
-        self.langs = [self._get_lang(x) for x in self.entries]
-        self._init_processed()
-        self.process_entries()
+        if not self.error:
+            self.langs = [self._get_lang(x) for x in self.entries]
+            self._init_processed()
+            self.process_entries()
 
     def get_api_url(self):
         try:
@@ -56,7 +57,10 @@ class LingueeEntries():
         r = requests.get(self.url).text
         if r == "Internal Server Error":
             return {}, True
-        return json.loads(r), False
+        r = json.loads(r)
+        if "The Linguee server returned 503" in r.get("message"):
+            return r, True
+        return r, False
 
     def _get_lang(self, entry):
         lang_pool = copy(self.lang_pool)
