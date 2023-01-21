@@ -37,7 +37,6 @@ class DictEntry():
         self.source = source
         self.collections_path = collections_path.expanduser()
         self.manual_selection = manual_selection
-
         self.entries = entries_factory[used_dict](word, src_lang, dst_lang)()
         self.input_lang = self.get_input_lang(self.input_lang)
 
@@ -79,7 +78,6 @@ class DictEntry():
         # try:
         #     df.iloc[0]
         # except:
-        #     import pdb; pdb.set_trace()
         return df.iloc[0]
 
     @property

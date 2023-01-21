@@ -5,6 +5,10 @@ from pydantic import BaseModel
 from dict_entry import DictEntry
 
 
+class TooManyRequestsError(Exception):
+    pass
+
+
 class DictCombine(BaseModel):
     dicts: List[DictEntry]
     dict_names: List[str]
@@ -51,6 +55,8 @@ class DictCombine(BaseModel):
                           collections_path=collections_path)
             if d():
                 dicts.append(d)
+            elif dtu == "linguee":
+                raise TooManyRequestsError("Linguee too many requests error.")
         return cls(dicts=dicts,
                    dict_names=dicts_to_use,
                    external_example_src=external_example_src,
