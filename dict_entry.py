@@ -169,6 +169,8 @@ class DictEntry():
     def pos(self):
         if self.original_pos is None:
             return self.row.pos
+        if self.original_pos not in self.row.pos:
+            return self.row.pos
         return self.original_pos
 
     def get_input_lang(self, input_lang):
