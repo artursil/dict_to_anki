@@ -54,7 +54,9 @@ class LingueeEntries():
                     if lang := al.get("lang"):
                         lang_pool.remove(process_lang(lang))
                         return lang_pool[0]
-        raise KeyError(f"Couldn't find a language for word: {self.word}")
+        # raise KeyError(f"Couldn't find a language for word: {self.word}")
+        print(f"Couldn't find a language for word: {self.word}")
+        return ""
 
     def _init_processed(self):
         self.processed_entries = {}
