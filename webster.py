@@ -1,9 +1,10 @@
+import re
 import requests
 import json
 import pandas as pd
 from collections import defaultdict
 from dict_secrets import WEBSTER, THESAURUS
-from utils import del_italics, get_webster_audio
+from utils import del_italics, en_verb_processing, get_webster_audio
 
 class WebsterEntries():
     def __init__(self, word: str, *args, **kwargs):
@@ -21,6 +22,24 @@ class WebsterEntries():
                                              key=THESAURUS)
         thesaurus_entries = json.loads(requests.get(word_url).text)
         return webster_entries, thesaurus_entries
+
+
+    def process_desc(self, desc):
+        pattern = re.compile(r"{dx_def}.+{/dx_def}")
+        if m := pattern.search(desc):
+            desc = desc.replace(m[0], "")
+        replace_d = {
+            "{wi}": "<i>",
+            "{/wi}": "</i>",
+            "{it}": "<i>",
+            "{/it}": "</i>",
+            "{bc}": "",
+        }
+        for k, v in replace_d.items():
+            desc = desc.replace(k, v)
+        return desc
+
+        
 
     def process_webster_entries(self, thesaurus_entries: list, webster_entries: list,
                                 definitions: list = []):
@@ -73,8 +92,12 @@ class WebsterEntries():
                             syns = []
                     syn_list = "<b>Synonyms: </b><br>" +", ".join([x["wd"] for x in syns][:5])
                 desc = f"{desc}<br><br>{example}<br><br>{syn_list}"
+                word = self.original_word
+                if fl == "verb":
+                    word = en_verb_processing(word)
+                desc = self.process_desc(desc)
                 definition = {
-                    "processed_word": f"{self.original_word} ({fl})",
+                    "processed_word": f"{word} ({fl})",
                     "pos": fl,
                     "target": desc,
                     "synonyms": syn_list,
