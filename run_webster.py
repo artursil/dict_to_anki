@@ -3,6 +3,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import time
 from copy import copy
+import argparse
 
 from selenium import webdriver
 from dict_entry import TwoEntries
@@ -20,16 +21,17 @@ def get_words(soup: List[BeautifulSoup]):
     return words
 
 
-def process_words(driver, saved_words):
+def process_words(driver):
+    new_words = []
     soup = BeautifulSoup(driver.page_source)
 #     import pdb; pdb.set_trace()
     saved_words_soup = soup.find_all("li", {"class": "words-list-item item-even"})
 #     saved_words += [x.find("a").text for x in saved_words_soup]
-    saved_words += get_words(saved_words_soup)
+    new_words += get_words(saved_words_soup)
     saved_words_soup = soup.find_all("li", {"class": "words-list-item item-odd"})
 #     saved_words += [x.find("a").text for x in saved_words_soup]
-    saved_words += get_words(saved_words_soup)
-    return saved_words
+    new_words += get_words(saved_words_soup)
+    return new_words
 
 
 def get_saved_words(driver, df):
@@ -45,16 +47,21 @@ def get_saved_words(driver, df):
         driver.get(f"https://www.merriam-webster.com/saved-words?page={page}")
         time.sleep(5)
         old_words = copy(saved_words)
-        saved_words = process_words(driver=driver, saved_words=saved_words)
+        new_words = process_words(driver=driver)
+        saved_words += new_words
         if len(old_words) == len(saved_words) and page != num_of:
             driver.get(f"https://www.merriam-webster.com/saved-words?page={page}")
             time.sleep(10)
-            saved_words = process_words(driver=driver, saved_words=saved_words)
+            new_words = process_words(driver=driver)
+            saved_words += new_words
 
         print(len(saved_words))
-        for w in saved_words:
-            if w in df.saved_words.to_list():
-                return saved_words
+        all_saved = [w in df.saved_words.to_list() for w in new_words]
+        import pdb; pdb.set_trace()
+        if all(all_saved):
+            return saved_words
+        # for w in saved_words:
+        #     if w in df.saved_words.to_list():
     return saved_words
 
 
@@ -63,7 +70,7 @@ def run_scraper():
     chrome_options.add_argument("--window-size=1366,768")
     chrome_options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
     driver = webdriver.Chrome(chrome_options=chrome_options)
-    driver.get("https://www.merriam-webster.com/")
+    driver.get("https://www.merriam-webster.com/login")
     input("Logged in?")
 
     try:
@@ -122,13 +129,18 @@ def run_definitions():
 
     webster_df.to_csv("webster.csv", index=None, header=None)
 
+
 def run(scrape=False):
     if scrape:
         run_scraper()
     run_definitions()
 
+
 if __name__ == "__main__":
-    run(False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--scrape", action="store_true")
+    args = parser.parse_args()
+    run(args.scrape)
 
 
     
