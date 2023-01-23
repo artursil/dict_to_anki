@@ -37,7 +37,7 @@ class DictEntry():
         self.source = source
         self.collections_path = collections_path.expanduser()
         self.manual_selection = manual_selection
-        self.entries = entries_factory[used_dict](word, src_lang, dst_lang)()
+        self.entries, self.error = entries_factory[used_dict](word, src_lang, dst_lang)()
         self.input_lang = self.get_input_lang(self.input_lang)
 
     @property
@@ -197,6 +197,8 @@ class DictEntry():
         return word
 
     def get_dict(self):
+        if self.error is not None:
+            return {}, self.error
         if self.entries.empty or self.row.empty:
             return {}
         if self.input_lang == self.dst_lang == self.src_lang:
@@ -221,7 +223,7 @@ class DictEntry():
             "original_word": self.original_word,
             "source": self.source
         }
-        return row_dict
+        return row_dict, None
 
     def __call__(self):
         return self.get_dict()
@@ -263,10 +265,11 @@ class TwoEntries(DictEntry):
             return [{}]
         dicts = []
         if self.pos_set:
-            return [self.get_dict()]
+            return [self.get_dict()[0]]
         for pos in self.all_pos[:2]:
             self.original_pos = pos
-            result = self.get_dict()
+            # Assuming we don't accept errors from Webster
+            result, _ = self.get_dict()
             dicts.append(result)
         return dicts
 

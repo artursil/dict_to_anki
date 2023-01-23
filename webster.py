@@ -113,7 +113,7 @@ class WebsterEntries():
             thesaurus_entries=self.thesarus, webster_entries=self.webster
         )
         df = pd.DataFrame(definitions)
-        return df
+        return df, None
 
     def __call__(self):
         return self.get_df()

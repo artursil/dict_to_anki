@@ -37,7 +37,7 @@ class LingueeEntries():
         print(self.url)
         self.lang_pool = [src_lang, dst_lang]
         self.entries, self.error = self._get_lin_entries()
-        if not self.error:
+        if self.error is None:
             self.langs = [self._get_lang(x) for x in self.entries]
             self._init_processed()
             self.process_entries()
@@ -56,11 +56,12 @@ class LingueeEntries():
     def _get_lin_entries(self):
         r = requests.get(self.url).text
         if r == "Internal Server Error":
-            return {}, True
+            return {}, "server_error"
         r = json.loads(r)
-        if "The Linguee server returned 503" in r.get("message"):
-            return r, True
-        return r, False
+        if isinstance(r, dict):
+            if "The Linguee server returned 503" in r.get("message"):
+                return r, "503"
+        return r, None
 
     def _get_lang(self, entry):
         lang_pool = copy(self.lang_pool)
@@ -150,19 +151,12 @@ class LingueeEntries():
                 if "," in row.pos_dst:
                     pg = [x.strip() for x in row.pos_dst.split(",")]
                     df.loc[ix, "pos_dst"], df.loc[ix, "gender_dst"] = pg
-            return df
+            return df, self.error
         else:
-            return pd.DataFrame()
+            return pd.DataFrame(), self.error
 
     def __call__(self):
         return self.get_df()
-
-
-def get_lin_entries(word):
-    r = requests.get(word).text
-    if r == "Internal Server Error":
-        return "Linguee Error"
-    return json.loads(r)
 
 
 if __name__ == "__main__":

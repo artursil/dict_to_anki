@@ -51,7 +51,8 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
         print(ix)
         print(row.word)
         
-        if ix < 76:
+        # 42
+        if ix < 43:
             continue
 
         if not ready_for_anki.empty:
@@ -69,10 +70,12 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
                                        source=source
                                        )
     #     import pdb; pdb.set_trace()
-        ready_entry = ready_entry()
+        ready_entry, errors = ready_entry()
         if not ready_entry:
-            import pdb; pdb.set_trace()
+            print(f"No entry for {row.word}")
             continue
+        if "503" in errors:
+            raise TooManyRequestsError("Linguee too many requests error.")
         ready_entries.append(ready_entry)
         time.sleep(10)
         if ix % 10 == 1:

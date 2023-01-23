@@ -13,12 +13,13 @@ class DictCombine(BaseModel):
     dicts: List[DictEntry]
     dict_names: List[str]
     entries: dict = {}
+    errors: List[str] = []  # TODO: Should be an Enum
     external_example_dst: str = ""
     external_example_src: str = ""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.entries = self.get_entries()
+        self.entries, self.errors = self.get_entries()
         self.validate_external_examples()
 
     def validate_external_examples(self):
@@ -55,8 +56,6 @@ class DictCombine(BaseModel):
                           collections_path=collections_path)
             if d():
                 dicts.append(d)
-            elif dtu == "linguee":
-                raise TooManyRequestsError("Linguee too many requests error.")
         return cls(dicts=dicts,
                    dict_names=dicts_to_use,
                    external_example_src=external_example_src,
@@ -67,9 +66,11 @@ class DictCombine(BaseModel):
 
     def get_entries(self):
         entries = {}
+        errors = []
         for d, n in zip(self.dicts, self.dict_names):
-            entries[n] = d()
-        return entries
+            entries[n], error = d()
+            errors.append(error)
+        return entries, errors
 
     def __prepare_df(self, key: str, sort: list = []):
         df = pd.DataFrame()
@@ -93,6 +94,9 @@ class DictCombine(BaseModel):
     def __return_multiple_value(self, key: str, sort: list = [],
                                 examples: list = []):
         df = self.__prepare_df(key, sort)
+        df = df.loc[(~pd.isnull(df.value)) & (df.value != "")]
+        if df.empty:
+            return ""
         examples = "<br>".join(df.value.to_list()).split("<br>")
         if len(examples) >= 2:
             return f"1. {examples[0]}<br> 2. {examples[1]}"
@@ -175,7 +179,7 @@ class DictCombine(BaseModel):
 
     def __call__(self):
         if not self.dicts:
-            return {}
+            return {}, self.errors
         if not self.dicts[0]:
-            return {}
-        return self.anki_row
+            return {}, self.errors
+        return self.anki_row, self.errors

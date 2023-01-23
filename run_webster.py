@@ -118,15 +118,17 @@ def run_definitions():
         if word in webster_df["Original word"].to_list():
             continue
         print(word)
-        ee = TwoEntries.webster(word)()
+        ee, _ = TwoEntries.webster(word)()
         if ee[0]:
             ee = [process_entry(x) for x in ee]
             entries.extend(ee)
         if ix % 10 == 1:
             webster_df = pd.DataFrame(entries)
+            webster_df = webster_df.sample(frac=1).reset_index(drop=True)
             webster_df.to_csv("webster.csv", index=None, header=None)
     webster_df = pd.DataFrame(entries)
 
+    webster_df = webster_df.sample(frac=1).reset_index(drop=True)
     webster_df.to_csv("webster.csv", index=None, header=None)
 
 
