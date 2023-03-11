@@ -216,9 +216,11 @@ class PonsEntries():
             df_tmp["lang"] = k
             df = pd.concat([df, df_tmp])
 
-        df = self.__interpolate_gf(df)
-        df = df.loc[(~pd.isnull(df.target)) & (df.target != "")]
-        return df, None
+        if not df.empty:
+            df = self.__interpolate_gf(df)
+            df = df.loc[(~pd.isnull(df.target)) & (df.target != "")]
+            return df, None
+        return df, "empty"
 
     def __call__(self):
         return self.get_df()
