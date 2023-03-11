@@ -182,4 +182,6 @@ class DictCombine(BaseModel):
             return {}, self.errors
         if not self.dicts[0]:
             return {}, self.errors
+        if self.processed_word is None:
+            return (), self.errors
         return self.anki_row, self.errors
