@@ -1,7 +1,7 @@
 import time
 from typing import Optional
 import pandas as pd
-from dict_combine import DictCombine
+from dict_combine import DictCombine, TooManyRequestsError
 from pathlib import Path
 
 import warnings
@@ -52,8 +52,8 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
         print(row.word)
         
         # 42
-        if ix < 43:
-            continue
+        # if ix < 44:
+        #     continue
 
         if not ready_for_anki.empty:
 #             import pdb; pdb.set_trace()
@@ -69,10 +69,9 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
                                        external_example_src=example_src,
                                        source=source
                                        )
-    #     import pdb; pdb.set_trace()
         ready_entry, errors = ready_entry()
         if not ready_entry:
-            print(f"No entry for {row.word}")
+            print(f"No entry for {row.word}") # Add ingore list
             continue
         if "503" in errors:
             raise TooManyRequestsError("Linguee too many requests error.")
@@ -86,7 +85,7 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
             ready_for_anki.to_csv(save_csv, index=False)
     df_tmp = pd.DataFrame(ready_entries)
     ready_for_anki = ready_for_anki.append(df_tmp)
-    ready_for_anki.to_csv(save_csv, index=False)
+    ready_for_anki.to_csv(save_csv, index=False, header=None)
 
 if __name__ == "__main__":
     run(save_csv="ready_for_anki3.csv")
