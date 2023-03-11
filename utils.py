@@ -46,8 +46,11 @@ def downloadimages(query):
     # be specified manually ("large, medium, icon")
     # aspect ratio denotes the height width ratio
     # of images to download. ("tall, square, wide, panoramic")
+    if query[0] == "[":
+        query = query.replace("[", "").replace("]", "") # [piece of] glass
     query = query.split(",")[0].split("/")[0].split("[")[0].strip()
     # query = query.split(",")[0]
+    print(query)
     response().download(query, 10)
     image = Path.cwd() / "simple_images" / query
     files = list(image.glob("*"))
