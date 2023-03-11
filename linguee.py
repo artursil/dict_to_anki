@@ -14,8 +14,6 @@ from pathlib import Path
 from utils import pos_processors, word_processing, noun_processing, verb_processing
 from dict_base import DictBase
 
-import linguee_api
-
 
 def process_lang(lang: str):
     lang = lang.lower()
