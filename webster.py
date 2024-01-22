@@ -45,10 +45,12 @@ class WebsterEntries():
                                 definitions: list = []):
         definitions = []
         # audio = get_webster_audio(webster_entries)
-        if not thesaurus_entries and isinstance(webster_entries[0], str):
+        if not thesaurus_entries and (isinstance(webster_entries[0], str) or not webster_entries):
             return definitions
         elif not thesaurus_entries:
             thesaurus_entries = [""]
+        elif not webster_entries:
+            webster_entries = [""]
         audio = ""
         if isinstance(thesaurus_entries[0], str):
             entries = webster_entries
@@ -65,7 +67,9 @@ class WebsterEntries():
             if isinstance(thesaurus_entries[0], str):
                 return definitions
         for entry in entries:
-            fl = entry["fl"]
+            fl = entry.get("fl", "")
+            if not fl:
+                continue
 
             for d in entry["def"][0]["sseq"]:
                 dt = d[0][1]

@@ -57,9 +57,9 @@ def get_saved_words(driver, df):
 
         print(len(saved_words))
         all_saved = [w in df.saved_words.to_list() for w in new_words]
-        import pdb; pdb.set_trace()
         if all(all_saved):
-            return saved_words
+            pass
+            # return saved_words
         # for w in saved_words:
         #     if w in df.saved_words.to_list():
     return saved_words
@@ -118,8 +118,10 @@ def run_definitions():
         if word in webster_df["Original word"].to_list():
             continue
         print(word)
-        ee, _ = TwoEntries.webster(word)()
-        if ee[0]:
+        # ee, _ = TwoEntries.webster(word)()
+        # if ee[0]:
+        ee = TwoEntries.webster(word)()
+        if ee:
             ee = [process_entry(x) for x in ee]
             entries.extend(ee)
         if ix % 10 == 1:

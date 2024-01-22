@@ -52,7 +52,8 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
         print(row.word)
         
         # 42
-        # if ix < 44:
+        # 435
+        # if ix < 435:
         #     continue
 
         if not ready_for_anki.empty:
@@ -77,7 +78,7 @@ def run(csv: Optional[str] = None, save_csv: str = "ready_for_anki.csv"):
             raise TooManyRequestsError("Linguee too many requests error.")
         ready_entries.append(ready_entry)
         time.sleep(10)
-        if ix % 10 == 1:
+        if ix % 2 == 1:
 #             import pdb; pdb.set_trace()
             df_tmp = pd.DataFrame(ready_entries)
             ready_entries = []
