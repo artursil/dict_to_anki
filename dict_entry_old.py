@@ -18,10 +18,9 @@ entries_factory = {
 }
 
 
-class SingleEntry():
+class DictEntry():
     def __init__(self,
                  word: str,
-                 entry: Optional[pd.DataFrame] = None,
                  pos: Optional[str] = None,
                  input_lang: Optional[str] = None,
                  manual_selection: bool = False,
@@ -38,10 +37,7 @@ class SingleEntry():
         self.source = source
         self.collections_path = collections_path.expanduser()
         self.manual_selection = manual_selection
-        if entry is not None:
-            self.entries, self.error = entry, None 
-        else:
-            self.entries, self.error = entries_factory[used_dict](word, src_lang, dst_lang)()
+        self.entries, self.error = entries_factory[used_dict](word, src_lang, dst_lang)()
         self.input_lang = self.get_input_lang(self.input_lang)
 
     @property
@@ -252,55 +248,7 @@ class SingleEntry():
          )
 
 
-class AllEntries(SingleEntry):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.used_dict = kwargs.get("used_dict")
-
-    def __call__(self):
-        if self.entries.empty:
-            return []
-        entries = self.entries.loc[self.entries.n <= 3]
-        results = []
-        for ix, entry in entries.iterrows():
-            single_entry = SingleEntry(
-                word=self.word, 
-                entry=pd.DataFrame([entry]), 
-                pos=self.pos, 
-                input_lang=self.input_lang,
-                manual_selection=self.manual_selection,
-                src_lang=self.src_lang,
-                dst_lang=self.dst_lang,
-                source=self.source,
-                used_dict=self.used_dict)
-            result, _ = single_entry()
-            if entry["n"] > 1:
-                result["processed_word"] = f"{result['processed_word']} {entry['n']}"
-            results.append(result)
-
-        return results
-
-        
-    @classmethod
-    def webster(
-        cls,
-        word: str,
-        pos: Optional[str] = None,
-        manual_selection: bool = False,
-        source: str = "manual",
-    ):
-        return cls(
-            word=word,
-            pos=pos,
-            input_lang="en",
-            manual_selection=manual_selection,
-            src_lang="en",
-            dst_lang="en",
-            source=source,
-            used_dict="webster"
-         )
-
-class TwoEntries(SingleEntry):
+class TwoEntries(DictEntry):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pos_set = self.original_pos is not None
@@ -318,6 +266,7 @@ class TwoEntries(SingleEntry):
         dicts = []
         if self.pos_set:
             return [self.get_dict()[0]]
+        breakpoint()
         for pos in self.all_pos[:2]:
             self.original_pos = pos
             # Assuming we don't accept errors from Webster
@@ -356,5 +305,5 @@ if __name__ == "__main__":
     # print(entry)
 
     # entry = DictEntry.webster("pull the wool over one's eyes")()
-    entry = AllEntries.webster("frotteurism")()
+    entry = TwoEntries.webster("imperative")()
     print(entry)

@@ -66,7 +66,9 @@ class WebsterEntries():
 
             if isinstance(thesaurus_entries[0], str):
                 return definitions
+        processed_words = []
         for entry in entries:
+            n = 1
             fl = entry.get("fl", "")
             if not fl:
                 continue
@@ -100,8 +102,13 @@ class WebsterEntries():
                 if fl == "verb":
                     word = en_verb_processing(word)
                 desc = self.process_desc(desc)
+                processed_word = f"{word} ({fl})"
+                if processed_word in processed_words:
+                    n += 1
+                processed_words.append(processed_word)
                 definition = {
-                    "processed_word": f"{word} ({fl})",
+                    "processed_word": processed_word,
+                    "n": n,
                     "pos": fl,
                     "target": desc,
                     "synonyms": syn_list,
@@ -125,4 +132,6 @@ class WebsterEntries():
 
 if __name__ == "__main__":
     entries = WebsterEntries("imperative")
+    entries = WebsterEntries("frotteur")
     df = entries()
+    print(df)

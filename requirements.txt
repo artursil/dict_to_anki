@@ -1,0 +1,2 @@
+google-images-download==2.8.0
+simple-image-download==0.2

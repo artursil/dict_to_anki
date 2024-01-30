@@ -6,7 +6,7 @@ from copy import copy
 import argparse
 
 from selenium import webdriver
-from dict_entry import TwoEntries
+from dict_entry import TwoEntries, AllEntries
 
 
 def get_words(soup: List[BeautifulSoup]):
@@ -112,6 +112,7 @@ def run_definitions():
                      "Part of speech", "Sample sentence", "Original word"]
         )
     entries = webster_df.to_dict("records")
+    not_found_words = []
     for ix, row in df.iterrows():
         print(ix)
         word = row.saved_words
@@ -120,11 +121,17 @@ def run_definitions():
         print(word)
         # ee, _ = TwoEntries.webster(word)()
         # if ee[0]:
-        ee = TwoEntries.webster(word)()
+        ee = AllEntries.webster(word)()
         if ee:
             ee = [process_entry(x) for x in ee]
             entries.extend(ee)
+        else:
+            breakpoint()
+            not_found_words.append(word)
         if ix % 10 == 1:
+            with open("not_found_words.txt", "a") as f:
+                for w in not_found_words:
+                    f.write(f"{w}\n")
             webster_df = pd.DataFrame(entries)
             webster_df = webster_df.sample(frac=1).reset_index(drop=True)
             webster_df.to_csv("webster.csv", index=None, header=None)
